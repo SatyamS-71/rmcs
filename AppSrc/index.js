@@ -3,8 +3,10 @@ import { WebSocketServer } from "ws";
 // const { v4: uuidv4 } = require("uuid"); // For generating unique IDs
 import { v4 as uuidv4 } from "uuid";
 
+const PORT = process.env.PORT || 8010;
+
 const wss = new WebSocketServer({
-  port: 8010,
+  port: PORT,
   perMessageDeflate: {
     zlibDeflateOptions: {
       chunkSize: 1024,
@@ -20,14 +22,14 @@ const wss = new WebSocketServer({
     concurrencyLimit: 10,
     threshold: 1024,
   },
-});
+},(obj)=>{console.log(obj)});
 
 const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
 wss.on("connection", (ws) => {
   ws.id = uuidv4();
-
+  console.log(`New connection event occurred, a player might have connected: ${JSON.stringify(ws)}`);
   ws.on("message", (message) => {
     let data;
     try {
@@ -199,7 +201,6 @@ wss.on("connection", (ws) => {
         delete rooms[code];
       }
     });
-  });
+  })
 });
 
-console.log("WebSocket server running on ws://localhost:8010");

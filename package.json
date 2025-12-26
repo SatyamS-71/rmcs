@@ -1,0 +1,29 @@
+{
+  "name": "rmcs",
+  "version": "1.0.0",
+  "description": "a guessing game",
+  "homepage": "https://github.com/SatyamS-71/rmcs#readme",
+  "bugs": {
+    "url": "https://github.com/SatyamS-71/rmcs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SatyamS-71/rmcs.git"
+  },
+  "license": "ISC",
+  "author": "Satyam Singh",
+  "type": "module",
+  "main": "\\AppSrc\\index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node AppSrc\\index.js",
+    "dev": "nodemon AppSrc\\index.js"
+  },
+  "dependencies": {
+    "uuid": "^13.0.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
