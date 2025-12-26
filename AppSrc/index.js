@@ -2,6 +2,7 @@
 import { WebSocketServer } from "ws";
 // const { v4: uuidv4 } = require("uuid"); // For generating unique IDs
 import { v4 as uuidv4 } from "uuid";
+import {inspect} from "util";
 
 const PORT = process.env.PORT || 8010;
 
@@ -22,14 +23,16 @@ const wss = new WebSocketServer({
     concurrencyLimit: 10,
     threshold: 1024,
   },
-},(obj)=>{console.log(obj)});
+});
+console.log(`WebSocket server is running on ws://localhost:${PORT}`);
 
 const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
 wss.on("connection", (ws) => {
   ws.id = uuidv4();
-  console.log(`New connection event occurred, a player might have connected: ${JSON.stringify(ws)}`);
+  console.log(`###New connection event occurred, a player might have connected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
+  
   ws.on("message", (message) => {
     let data;
     try {
@@ -192,8 +195,10 @@ wss.on("connection", (ws) => {
     }
   });
 
-  ws.on("close", () => {
-    Object.keys(rooms).forEach((code) => {
+  ws.on("close", (obj) => {
+  console.log(`###A Connection has been closed , a player might have disconnected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
+    
+  Object.keys(rooms).forEach((code) => {
       const room = rooms[code];
       room.players = room.players.filter((p) => p.id !== ws.id);
 
