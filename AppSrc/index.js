@@ -1,38 +1,31 @@
-// const WebSocket = require("ws");
 import { WebSocketServer } from "ws";
-// const { v4: uuidv4 } = require("uuid"); // For generating unique IDs
 import { v4 as uuidv4 } from "uuid";
-import {inspect} from "util";
+import { inspect } from "util";
+import express from "express";
+import http from "http";
 
 const PORT = process.env.PORT || 8010;
 
-const wss = new WebSocketServer({
-  port: PORT,
-  perMessageDeflate: {
-    zlibDeflateOptions: {
-      chunkSize: 1024,
-      memLevel: 7,
-      level: 3,
-    },
-    zlibInflateOptions: {
-      chunkSize: 10 * 1024,
-    },
-    clientNoContextTakeover: true,
-    serverNoContextTakeover: true,
-    serverMaxWindowBits: 10,
-    concurrencyLimit: 10,
-    threshold: 1024,
-  },
+const app = express();
+app.use(express.json());
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+server.listen(PORT, () => {
+  console.log(`WebSocket + HTTP server is running on ws://localhost:${PORT}`);
 });
-console.log(`WebSocket server is running on ws://localhost:${PORT}`);
 
 const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
 wss.on("connection", (ws) => {
   ws.id = uuidv4();
-  console.log(`###New connection event occurred, a player might have connected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
-  
+  console.log(
+    `###New connection event occurred, a player might have connected: \n ${inspect(
+      ws.id,
+      { showHidden: false, depth: 1, colors: true }
+    )}`
+  );
+
   ws.on("message", (message) => {
     let data;
     try {
@@ -196,9 +189,14 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", (obj) => {
-  console.log(`###A Connection has been closed , a player might have disconnected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
-    
-  Object.keys(rooms).forEach((code) => {
+    console.log(
+      `###A Connection has been closed , a player might have disconnected: \n ${inspect(
+        ws.id,
+        { showHidden: false, depth: 1, colors: true }
+      )}`
+    );
+
+    Object.keys(rooms).forEach((code) => {
       const room = rooms[code];
       room.players = room.players.filter((p) => p.id !== ws.id);
 
@@ -206,6 +204,5 @@ wss.on("connection", (ws) => {
         delete rooms[code];
       }
     });
-  })
+  });
 });
-
