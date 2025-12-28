@@ -4,7 +4,7 @@
 
 // =======================
 
-const ws = new WebSocket("ws://localhost:8010");
+const ws = new WebSocket(`ws://${location.host}`);
 
 // =======================
 

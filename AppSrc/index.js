@@ -1,13 +1,19 @@
-import { WebSocketServer } from "ws";
-import { v4 as uuidv4 } from "uuid";
-import { inspect } from "util";
-import express from "express";
-import http from "http";
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { WebSocketServer } = require("ws");
+const { randomUUID } = require("crypto");
+const { inspect } = require("util");
 
 const PORT = process.env.PORT || 8010;
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "Frontend")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "Frontend", "index.html"));
+});
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 server.listen(PORT, () => {
@@ -18,7 +24,7 @@ const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
 wss.on("connection", (ws) => {
-  ws.id = uuidv4();
+  ws.id = randomUUID();
   console.log(
     `###New connection event occurred, a player might have connected: \n ${inspect(
       ws.id,
@@ -122,8 +128,8 @@ wss.on("connection", (ws) => {
       case "start_game": {
         const { roomCode } = payload;
         const room = rooms[roomCode];
-
-        if (room && ws.id === room.roomBoss) {
+        console.log(room);
+        if (room && room.players.length >= 4 && ws.id === room.roomBoss) {
           shuffleAndAssignRoles(room);
 
           // Notify each player
