@@ -45,16 +45,52 @@ wss.on("connection", (ws) => {
     console.log(data);
 
     /** Helper: shuffle and assign roles */
-    function shuffleAndAssignRoles(room) {
-      const roles = ["Raja", "Mantri", "Chor", "Sipahi"];
+    // function shuffleAndAssignRoles(room) {
+    //   const roles = ["Raja", "Mantri", "Chor", "Sipahi"];
+    //   if (room.players.length !== 4) {
+    //     throw new Error("Exactly 4 players required");
+    //   }
+    //   for (let i = roles.length - 1; i > 0; i--) {
+    //     const j = Math.floor(Math.random() * (i + 1));
+    //     [roles[i], roles[j]] = [roles[j], roles[i]];
+    //   }
 
-      for (let i = roles.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [roles[i], roles[j]] = [roles[j], roles[i]];
+    //   room.players.forEach((player, idx) => {
+    //     player.role = roles[idx];
+    //     if (player.role === "Raja") player.score += 1000;
+    //     if (player.role === "Sipahi") player.score += 500;
+    //   });
+    // }
+
+    function shuffleAndAssignRoles(room) {
+      const playerCount = room.players.length;
+
+      if (playerCount < 4) {
+        throw new Error("At least 4 players required");
       }
 
-      room.players.forEach((player, idx) => {
-        player.role = roles[idx];
+      // Clear previous roles
+      room.players.forEach((p) => (p.role = null));
+
+      // Shuffle players
+      const shuffled = [...room.players];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      // Assign fixed roles
+      shuffled[0].role = "Raja";
+      shuffled[1].role = "Mantri";
+      shuffled[2].role = "Chor";
+
+      // Everyone else is Sipahi
+      for (let i = 3; i < shuffled.length; i++) {
+        shuffled[i].role = "Sipahi";
+      }
+
+      // Base score bonuses (once per round)
+      shuffled.forEach((player) => {
         if (player.role === "Raja") player.score += 1000;
         if (player.role === "Sipahi") player.score += 500;
       });
@@ -72,6 +108,7 @@ wss.on("connection", (ws) => {
     /** Handle different message types */
     switch (type) {
       case "create_room": {
+        console.log("create event request received..");
         const roomCode = Math.random()
           .toString(36)
           .substring(2, 6)
@@ -95,7 +132,7 @@ wss.on("connection", (ws) => {
         const { roomCode, name } = payload;
         const room = rooms[roomCode];
 
-        if (room && room.players.length < 4) {
+        if (room) {
           room.players.push({ id: ws.id, name, ws, score: 0 });
 
           // Broadcast updated room state
@@ -129,6 +166,7 @@ wss.on("connection", (ws) => {
         const { roomCode } = payload;
         const room = rooms[roomCode];
         console.log(room);
+        rooms[roomCode].players.forEach((p) => (p.role = null));
         if (room && room.players.length >= 4 && ws.id === room.roomBoss) {
           shuffleAndAssignRoles(room);
 
@@ -158,6 +196,8 @@ wss.on("connection", (ws) => {
         const { roomCode, guessedId, MantriId } = payload;
         const Chor = rooms[roomCode].players.find((p) => p.role === "Chor");
         const isCorrect = Chor.id === guessedId;
+        const guessed = rooms[roomCode].players.find((p) => p.id === guessedId);
+        const Mantri = rooms[roomCode].players.find((p) => p.id === MantriId);
 
         if (isCorrect) {
           // Mantri scores
@@ -170,11 +210,11 @@ wss.on("connection", (ws) => {
         const resultPayload = {
           type: "round_result",
           payload: {
-            guessedId,
-            MantriId,
+            guessedName: guessed.name,
+            Mantriname: Mantri.name,
             wasCorrect: isCorrect,
             roles: rooms[roomCode].players.map((p) => ({
-              id: p.id,
+              name: p.name,
               role: p.role,
               score: p.score,
             })),

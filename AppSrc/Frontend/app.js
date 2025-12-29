@@ -4,7 +4,7 @@
 
 // =======================
 
-const ws = new WebSocket(`ws://${location.host}`);
+const ws = new WebSocket(`wss://${location.host}`);
 
 // =======================
 
@@ -77,6 +77,7 @@ ws.onerror = (err) => {
 };
 
 ws.onclose = () => {
+  console.log("Connection closed");
   alert("Connection closed");
 };
 
@@ -98,7 +99,6 @@ function send(type, payload) {
 
 createBtn.onclick = () => {
   const name = nameInput.value.trim();
-
   if (!name) return alert("Enter name");
 
   send("create_room", { name });
@@ -255,17 +255,28 @@ function showResult(payload) {
   screenGame.hidden = true;
 
   screenResult.hidden = false;
+  console.log("in showResult , the payload is ", payload);
 
   screenResult.innerHTML = `
 <h3>Round Result</h3>
-<p>Mantri guessed: ${payload.guessedId}</p>
-<p>Correct: ${payload.wasCorrect}</p>
+<p>Mantri (${payload.Mantriname}) guessed: ${
+    payload.guessedName
+  } is the chor </p>
+<p color=${payload.wasCorrect ? "Green" : "Red"}>Correct: ${
+    payload.wasCorrect
+  }</p>
 <ul>
 
       ${payload.roles
-        .map((r) => `<li>${r.id} → ${r.role} (${r.score})</li>`)
+        .map((r) => `<li>${r.name} → ${r.role} (${r.score})</li>`)
         .join("")}
 </ul>
-<button onclick="location.reload()">Next Round</button>
   `;
+  if (state.isroomBoss) {
+    startBtn.onclick = () => {
+      send("start_game", { roomCode: state.roomCode });
+    };
+    startBtn.hidden = false;
+    startBtn.innerHTML = "Next round";
+  }
 }
