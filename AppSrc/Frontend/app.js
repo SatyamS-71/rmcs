@@ -56,6 +56,7 @@ const yourRoleEl = document.getElementById("yourRole");
 
 const guessArea = document.getElementById("guessArea");
 
+const nextround = document.getElementById("Next round");
 // =======================
 
 // WebSocket Handlers
@@ -115,6 +116,10 @@ joinBtn.onclick = () => {
 };
 
 startBtn.onclick = () => {
+  send("start_game", { roomCode: state.roomCode });
+};
+
+nextround.onclick = () => {
   send("start_game", { roomCode: state.roomCode });
 };
 
@@ -224,6 +229,8 @@ function showGame(role) {
 
   screenResult.hidden = true;
 
+  nextround.hidden = true;
+
   yourRoleEl.textContent = role;
 
   guessArea.innerHTML = "";
@@ -262,7 +269,7 @@ function showResult(payload) {
 <p>Mantri (${payload.Mantriname}) guessed: ${
     payload.guessedName
   } is the chor </p>
-<p color=${payload.wasCorrect ? "Green" : "Red"}>Correct: ${
+<p color= \"${payload.wasCorrect ? "Green" : "Red"}\">Correct: ${
     payload.wasCorrect
   }</p>
 <ul>
@@ -272,11 +279,9 @@ function showResult(payload) {
         .join("")}
 </ul>
   `;
-  if (state.isroomBoss) {
-    startBtn.onclick = () => {
-      send("start_game", { roomCode: state.roomCode });
-    };
-    startBtn.hidden = false;
-    startBtn.innerHTML = "Next round";
+
+  console.log("is the roomBoss true?", state.isRoomBoss);
+  if (state.isRoomBoss) {
+    nextround.hidden = false;
   }
 }
