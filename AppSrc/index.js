@@ -61,7 +61,6 @@ wss.on("connection", (ws) => {
     //     if (player.role === "Sipahi") player.score += 500;
     //   });
     // }
-
     function shuffleAndAssignRoles(room) {
       const playerCount = room.players.length;
 
@@ -224,6 +223,23 @@ wss.on("connection", (ws) => {
         rooms[roomCode].players.forEach((p) =>
           p.ws.send(JSON.stringify(resultPayload))
         );
+        break;
+      }
+
+      case "room_chat": {
+        const { roomCode, message, username } = payload;
+        //broadcast the received message
+        rooms[roomCode].players.forEach((p) => {
+          p.ws.send(
+            JSON.stringify({
+              type: "Broadcast_msg",
+              payload: {
+                brdcastby: username,
+                brdcastmsg: message,
+              },
+            })
+          );
+        });
         break;
       }
 

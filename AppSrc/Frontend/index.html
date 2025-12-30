@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
   <head>
     <title>RMCS</title>
@@ -24,6 +24,52 @@
 
     <div id="screen-result" hidden></div>
     <button id="Next round" hidden>Next round</button>
+    <script src="app.js"></script>
+  </body>
+</html> -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RMCS</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div id="layout">
+      <!-- LEFT: GAME AREA -->
+      <div id="main-area">
+        <div id="screen-login">
+          <input id="nameInput" placeholder="Enter name" />
+          <input id="roomInput" placeholder="Room code" />
+          <button id="createBtn">Create Room</button>
+          <button id="joinBtn">Join</button>
+        </div>
+
+        <div id="screen-room" hidden>
+          <h3>Room: <span id="roomCode"></span></h3>
+          <ul id="players"></ul>
+          <button id="startBtn" hidden>Start Game</button>
+        </div>
+
+        <div id="screen-game" hidden>
+          <h3>Your Role: <span id="yourRole"></span></h3>
+          <div id="guessArea"></div>
+        </div>
+
+        <div id="screen-result" hidden></div>
+      </div>
+
+      <!-- RIGHT: CHAT PANEL -->
+      <div id="chat-panel">
+        <div id="chat-input">
+          <input id="chatText" placeholder="Type a message..." />
+          <button id="sendChatBtn">Send</button>
+        </div>
+        <div id="chat-messages"></div>
+      </div>
+      <div id="bottom-spacer"></div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

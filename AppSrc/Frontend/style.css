@@ -1,1 +1,56 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
 
+/* MAIN LAYOUT */
+#layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* GAME AREA */
+#main-area {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* CHAT PANEL */
+#chat-panel {
+  height: 180px;
+  min-height: 120px;
+  resize: vertical;        /* native resize */
+  overflow: hidden;        /* required for resize */
+  border-top: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+
+/* CHAT MESSAGES */
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  background: #f9f9f9;
+}
+
+/* CHAT INPUT */
+#chat-input {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid #ddd;
+}
+
+#chat-input input {
+  flex: 1;
+}
+
+/* SPACER (IMPORTANT) */
+#bottom-spacer {
+  flex: 0.3;               /* adjustable free space */
+  min-height: 0;
+}
