@@ -12,15 +12,14 @@
   },
   "license": "ISC",
   "author": "Satyam Singh",
-  "type": "module",
-  "main": "\\AppSrc\\index.js",
+  "type": "commonjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node AppSrc\\index.js",
-    "dev": "nodemon AppSrc\\index.js"
+    "start": "node AppSrc/index.js",
+    "dev": "nodemon AppSrc/index.js"
   },
   "dependencies": {
-    "uuid": "^13.0.0",
+    "express": "^5.2.1",
     "ws": "^8.18.3"
   },
   "devDependencies": {

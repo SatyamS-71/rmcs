@@ -1,38 +1,37 @@
-// const WebSocket = require("ws");
-import { WebSocketServer } from "ws";
-// const { v4: uuidv4 } = require("uuid"); // For generating unique IDs
-import { v4 as uuidv4 } from "uuid";
-import {inspect} from "util";
+const express = require("express");
+const http = require("http");
+const path = require("path");
+const { WebSocketServer } = require("ws");
+const { randomUUID } = require("crypto");
+const { inspect } = require("util");
 
 const PORT = process.env.PORT || 8010;
 
-const wss = new WebSocketServer({
-  port: PORT,
-  perMessageDeflate: {
-    zlibDeflateOptions: {
-      chunkSize: 1024,
-      memLevel: 7,
-      level: 3,
-    },
-    zlibInflateOptions: {
-      chunkSize: 10 * 1024,
-    },
-    clientNoContextTakeover: true,
-    serverNoContextTakeover: true,
-    serverMaxWindowBits: 10,
-    concurrencyLimit: 10,
-    threshold: 1024,
-  },
+const app = express();
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "Frontend")));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "Frontend", "index.html"));
 });
-console.log(`WebSocket server is running on ws://localhost:${PORT}`);
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+server.listen(PORT, () => {
+  console.log(`WebSocket + HTTP server is running on ws://localhost:${PORT}`);
+});
 
 const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
 wss.on("connection", (ws) => {
-  ws.id = uuidv4();
-  console.log(`###New connection event occurred, a player might have connected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
-  
+  ws.id = randomUUID();
+  console.log(
+    `###New connection event occurred, a player might have connected: \n ${inspect(
+      ws.id,
+      { showHidden: false, depth: 1, colors: true }
+    )}`
+  );
+
   ws.on("message", (message) => {
     let data;
     try {
@@ -46,16 +45,51 @@ wss.on("connection", (ws) => {
     console.log(data);
 
     /** Helper: shuffle and assign roles */
-    function shuffleAndAssignRoles(room) {
-      const roles = ["Raja", "Mantri", "Chor", "Sipahi"];
+    // function shuffleAndAssignRoles(room) {
+    //   const roles = ["Raja", "Mantri", "Chor", "Sipahi"];
+    //   if (room.players.length !== 4) {
+    //     throw new Error("Exactly 4 players required");
+    //   }
+    //   for (let i = roles.length - 1; i > 0; i--) {
+    //     const j = Math.floor(Math.random() * (i + 1));
+    //     [roles[i], roles[j]] = [roles[j], roles[i]];
+    //   }
 
-      for (let i = roles.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [roles[i], roles[j]] = [roles[j], roles[i]];
+    //   room.players.forEach((player, idx) => {
+    //     player.role = roles[idx];
+    //     if (player.role === "Raja") player.score += 1000;
+    //     if (player.role === "Sipahi") player.score += 500;
+    //   });
+    // }
+    function shuffleAndAssignRoles(room) {
+      const playerCount = room.players.length;
+
+      if (playerCount < 4) {
+        throw new Error("At least 4 players required");
       }
 
-      room.players.forEach((player, idx) => {
-        player.role = roles[idx];
+      // Clear previous roles
+      room.players.forEach((p) => (p.role = null));
+
+      // Shuffle players
+      const shuffled = [...room.players];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      // Assign fixed roles
+      shuffled[0].role = "Raja";
+      shuffled[1].role = "Mantri";
+      shuffled[2].role = "Chor";
+
+      // Everyone else is Sipahi
+      for (let i = 3; i < shuffled.length; i++) {
+        shuffled[i].role = "Sipahi";
+      }
+
+      // Base score bonuses (once per round)
+      shuffled.forEach((player) => {
         if (player.role === "Raja") player.score += 1000;
         if (player.role === "Sipahi") player.score += 500;
       });
@@ -73,6 +107,7 @@ wss.on("connection", (ws) => {
     /** Handle different message types */
     switch (type) {
       case "create_room": {
+        console.log("create event request received..");
         const roomCode = Math.random()
           .toString(36)
           .substring(2, 6)
@@ -96,7 +131,7 @@ wss.on("connection", (ws) => {
         const { roomCode, name } = payload;
         const room = rooms[roomCode];
 
-        if (room && room.players.length < 4) {
+        if (room) {
           room.players.push({ id: ws.id, name, ws, score: 0 });
 
           // Broadcast updated room state
@@ -129,8 +164,9 @@ wss.on("connection", (ws) => {
       case "start_game": {
         const { roomCode } = payload;
         const room = rooms[roomCode];
-
-        if (room && ws.id === room.roomBoss) {
+        console.log(room);
+        rooms[roomCode].players.forEach((p) => (p.role = null));
+        if (room && room.players.length >= 4 && ws.id === room.roomBoss) {
           shuffleAndAssignRoles(room);
 
           // Notify each player
@@ -159,6 +195,8 @@ wss.on("connection", (ws) => {
         const { roomCode, guessedId, MantriId } = payload;
         const Chor = rooms[roomCode].players.find((p) => p.role === "Chor");
         const isCorrect = Chor.id === guessedId;
+        const guessed = rooms[roomCode].players.find((p) => p.id === guessedId);
+        const Mantri = rooms[roomCode].players.find((p) => p.id === MantriId);
 
         if (isCorrect) {
           // Mantri scores
@@ -171,11 +209,11 @@ wss.on("connection", (ws) => {
         const resultPayload = {
           type: "round_result",
           payload: {
-            guessedId,
-            MantriId,
+            guessedName: guessed.name,
+            Mantriname: Mantri.name,
             wasCorrect: isCorrect,
             roles: rooms[roomCode].players.map((p) => ({
-              id: p.id,
+              name: p.name,
               role: p.role,
               score: p.score,
             })),
@@ -188,6 +226,23 @@ wss.on("connection", (ws) => {
         break;
       }
 
+      case "room_chat": {
+        const { roomCode, message, username } = payload;
+        //broadcast the received message
+        rooms[roomCode].players.forEach((p) => {
+          p.ws.send(
+            JSON.stringify({
+              type: "Broadcast_msg",
+              payload: {
+                brdcastby: username,
+                brdcastmsg: message,
+              },
+            })
+          );
+        });
+        break;
+      }
+
       default: {
         console.log("Unknown message type:", type);
         break;
@@ -196,9 +251,14 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", (obj) => {
-  console.log(`###A Connection has been closed , a player might have disconnected: \n ${inspect(ws.id, {showHidden: false, depth: 1, colors: true})}`);
-    
-  Object.keys(rooms).forEach((code) => {
+    console.log(
+      `###A Connection has been closed , a player might have disconnected: \n ${inspect(
+        ws.id,
+        { showHidden: false, depth: 1, colors: true }
+      )}`
+    );
+
+    Object.keys(rooms).forEach((code) => {
       const room = rooms[code];
       room.players = room.players.filter((p) => p.id !== ws.id);
 
@@ -206,6 +266,5 @@ wss.on("connection", (ws) => {
         delete rooms[code];
       }
     });
-  })
+  });
 });
-
