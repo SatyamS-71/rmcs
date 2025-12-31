@@ -227,19 +227,35 @@ wss.on("connection", (ws) => {
       }
 
       case "room_chat": {
-        const { roomCode, message, username } = payload;
-        //broadcast the received message
-        rooms[roomCode].players.forEach((p) => {
-          p.ws.send(
-            JSON.stringify({
-              type: "Broadcast_msg",
-              payload: {
-                brdcastby: username,
-                brdcastmsg: message,
-              },
-            })
-          );
-        });
+        const { roomCode, message, msgby } = payload;
+
+        if (message === "!score") {
+          console.log(scoremsg);
+          rooms[roomCode].players.forEach((p) => {
+            p.ws.send(
+              JSON.stringify({
+                type: "Broadcast_msg",
+                payload: {
+                  brdcastby: roomCode,
+                  brdcastmsg: rooms[roomCode].players,
+                },
+              })
+            );
+          });
+        } else {
+          //broadcast the received message
+          rooms[roomCode].players.forEach((p) => {
+            p.ws.send(
+              JSON.stringify({
+                type: "Broadcast_msg",
+                payload: {
+                  brdcastby: msgby,
+                  brdcastmsg: message,
+                },
+              })
+            );
+          });
+        }
         break;
       }
 

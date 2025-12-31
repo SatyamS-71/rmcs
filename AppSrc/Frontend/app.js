@@ -22,6 +22,8 @@ const state = {
   yourRole: null,
 
   isRoomBoss: false,
+
+  playername: null,
 };
 
 // =======================
@@ -57,6 +59,12 @@ const yourRoleEl = document.getElementById("yourRole");
 const guessArea = document.getElementById("guessArea");
 
 const nextround = document.getElementById("Next round");
+
+const sendChtbtn = document.getElementById("sendChatBtn");
+
+const chatinput = document.getElementById("chatText");
+
+const chatscreen = document.getElementById("chat-messages");
 // =======================
 
 // WebSocket Handlers
@@ -94,20 +102,20 @@ function send(type, payload) {
 
 // =======================
 
-// Button Actions
+// Button Actions and event listeners
 
 // =======================
 
 createBtn.onclick = () => {
   const name = nameInput.value.trim();
   if (!name) return alert("Enter name");
-
+  state.playername = name;
   send("create_room", { name });
 };
 
 joinBtn.onclick = () => {
   const name = nameInput.value.trim();
-
+  state.playername = name;
   const roomCode = roomInput.value.trim().toUpperCase();
 
   if (!name || !roomCode) return alert("Enter name and room code");
@@ -123,6 +131,38 @@ nextround.onclick = () => {
   send("start_game", { roomCode: state.roomCode });
 };
 
+sendChtbtn.onclick = () => {
+  const msgtosend = chatinput.value.trim();
+  if (!msgtosend || !state.roomCode || !state.playername)
+    return console.log(
+      `empty values , msgtosend: ${msgtosend}  or roomcode: ${state.roomCode}  or playename: ${state.playename}`
+    );
+
+  send("room_chat", {
+    roomCode: state.roomCode,
+    message: msgtosend,
+    msgby: state.playername,
+  });
+  chatinput = null;
+};
+
+chatinput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const msgtosend = chatinput.value.trim();
+    if (!msgtosend || !state.roomCode || !state.playername)
+      return console.log(
+        `empty values , msgtosend: ${msgtosend}  or roomcode: ${state.roomCode}  or playename: ${state.playename}`
+      );
+
+    send("room_chat", {
+      roomCode: state.roomCode,
+      message: msgtosend,
+      msgby: state.playername,
+    });
+    chatinput = null;
+  }
+});
 // =======================
 
 // Message Dispatcher
@@ -184,6 +224,11 @@ function handleMessage(type, payload) {
 
       showResult(payload);
 
+      break;
+    }
+
+    case "Broadcast_msg": {
+      chatscreenupdate(payload);
       break;
     }
 
@@ -256,6 +301,43 @@ function showGame(role) {
       guessArea.appendChild(btn);
     });
   }
+}
+
+function chatscreenupdate(payload) {
+  //`chatscreen` is the div that will contain all the messages
+  /* payload is 
+              
+              payload: {
+                brdcastby: msgby,
+                brdcastmsg: message,
+              },
+            
+      */
+  //make element with the msg to be displayed
+  const chatblock = document.createElement("div");
+  const sender = document.createElement("div");
+  const msg = document.createElement("div");
+
+  chatblock.appendChild(sender);
+  chatblock.appendChild(msg);
+  //added the payload values to the html element
+
+  sender.textContent = `${payload.brdcastby}`;
+  msg.textContent = `${payload.brdcastmsg}`;
+
+  //styling
+  chatblock.className = "chat-block";
+  sender.className = "chat-sender";
+  msg.className = "chat-message";
+  if (payload.brdcastby === state.playername) {
+    chatblock.classList.add("self");
+  }
+  if (payload.brdcastby === state.roomCode) {
+    sender.style.color = "Red";
+  }
+  chatscreen.appendChild(chatblock);
+
+  chatscreen.scrollTop = chatscreen.scrollHeight;
 }
 
 function showResult(payload) {

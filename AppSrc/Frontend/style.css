@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
 }
@@ -21,9 +22,9 @@ html, body {
 #chat-panel {
   height: 180px;
   min-height: 120px;
-  resize: vertical;        /* native resize */
-  overflow: hidden;        /* required for resize */
-  border-top: 1px solid #ccc;
+  resize: both; /* native resize */
+  overflow: hidden; /* required for resize */
+  border-top: 1px solid #ffffff;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -35,6 +36,7 @@ html, body {
   overflow-y: auto;
   padding: 10px;
   background: #f9f9f9;
+  white-space: pre-line; /* 🔑 respects \n */
 }
 
 /* CHAT INPUT */
@@ -51,6 +53,50 @@ html, body {
 
 /* SPACER (IMPORTANT) */
 #bottom-spacer {
-  flex: 0.3;               /* adjustable free space */
+  flex: 0.3; /* adjustable free space */
   min-height: 0;
+}
+
+/* CHATBOX STYLING*/
+
+/* Chat container already scrollable */
+#chat-messages {
+  overflow-y: auto;
+}
+
+/* Base message block */
+.chat-block {
+  max-width: 75%; /* ⬅ not full width */
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: fit-content; /* ⬅ shrink to content */
+}
+
+/* Sender name */
+.chat-sender {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 2px;
+}
+
+/* Message text */
+.chat-message {
+  font-size: 18px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+/* MY messages (right aligned, green) */
+.chat-block.self {
+  margin-left: auto; /* ⬅ push to right */
+  background: #406b40;
+  text-align: right;
+}
+
+.chat-block.self .chat-sender {
+  color: #043f07;
 }
