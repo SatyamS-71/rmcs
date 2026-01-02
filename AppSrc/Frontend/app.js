@@ -340,6 +340,7 @@ function chatscreenupdate(payload) {
   chatscreen.scrollTop = chatscreen.scrollHeight;
 }
 
+/*
 function showResult(payload) {
   screenGame.hidden = true;
 
@@ -363,6 +364,41 @@ function showResult(payload) {
   `;
 
   console.log("is the roomBoss true?", state.isRoomBoss);
+  if (state.isRoomBoss) {
+    nextround.hidden = false;
+  }
+}
+*/
+
+function showResult(payload) {
+  screenGame.hidden = true;
+  screenResult.hidden = false;
+
+  const header = document.createElement("h3");
+  header.textContent = "Round Result";
+
+  const result = document.createElement("p");
+  result.textContent = `Mantri (${payload.Mantriname}) guessed: ${payload.guessedName}`;
+
+  const resultboolean = document.createElement("p");
+  resultboolean.textContent = payload.wasCorrect
+    ? "Correct choice"
+    : "Incorrect choice";
+  resultboolean.style.color = payload.wasCorrect ? "Green" : "Red";
+
+  const unslist = document.createElement("ul");
+
+  payload.roles.forEach((r) => {
+    const litems = document.createElement("li");
+    litems.textContent = `[${r.role}]${r.name} = ${r.score}`;
+    unslist.appendChild(litems);
+  });
+
+  screenResult.appendChild(header);
+  screenResult.appendChild(result);
+  screenResult.appendChild(resultboolean);
+  screenResult.appendChild(unslist);
+
   if (state.isRoomBoss) {
     nextround.hidden = false;
   }
