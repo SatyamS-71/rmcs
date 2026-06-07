@@ -143,7 +143,7 @@ sendChtbtn.onclick = () => {
     message: msgtosend,
     msgby: state.playername,
   });
-  chatinput = null;
+  chatinput.value = null;
 };
 
 chatinput.addEventListener("keydown", (e) => {
@@ -160,7 +160,7 @@ chatinput.addEventListener("keydown", (e) => {
       message: msgtosend,
       msgby: state.playername,
     });
-    chatinput = null;
+    chatinput.value = null;
   }
 });
 // =======================
@@ -323,8 +323,10 @@ function chatscreenupdate(payload) {
   //added the payload values to the html element
 
   sender.textContent = `${payload.brdcastby}`;
-  msg.textContent = `${payload.brdcastmsg}`;
-
+  msg.textContent = payload.brdcastby === state.roomCode? payload.brdcastmsg
+        .map(player => `${player.name} has a score of ${player.score}`)
+        .join("\n"):`${payload.brdcastmsg}`;
+        
   //styling
   chatblock.className = "chat-block";
   sender.className = "chat-sender";

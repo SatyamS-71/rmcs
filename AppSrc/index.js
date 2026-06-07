@@ -23,6 +23,16 @@ server.listen(PORT, () => {
 const rooms = {};
 // Structure: { roomCode: { players: [{ id, name, ws, score, role }], roomBoss } }
 
+function send(ws, type, payload){
+  ws.send(JSON.stringify({ type, payload }));
+}
+
+function broadcast(roomCode,type,payload){
+rooms[roomCode].players.forEach(player => {
+  player.ws.send(JSON.stringify({type,payload}));
+});
+}
+
 wss.on("connection", (ws) => {
   ws.id = randomUUID();
   console.log(
@@ -94,8 +104,7 @@ wss.on("connection", (ws) => {
         if (player.role === "Sipahi") player.score += 500;
       });
     }
-
-    /** Helper: update a player's score */
+     /** Helper: update a player's score */
     function updatePlayerScore(roomCode, playerId, score) {
       rooms[roomCode].players.forEach((player) => {
         if (player.id === playerId) {
@@ -117,13 +126,15 @@ wss.on("connection", (ws) => {
           players: [{ id: ws.id, name: payload.name, ws, score: 0 }],
           roomBoss: ws.id,
         };
-
+/* Adding send helper function for better readability and maintainability
         ws.send(
           JSON.stringify({
             type: "room_created",
             payload: { roomCode, wsid: ws.id },
           })
         );
+*/
+        send(ws, "room_created", { roomCode, wsid: ws.id });
         break;
       }
 
@@ -132,10 +143,11 @@ wss.on("connection", (ws) => {
         const room = rooms[roomCode];
 
         if (room) {
-          room.players.push({ id: ws.id, name, ws, score: 0 });
-
+          room.players.push({ id: ws.id, name, ws, score: 0 });          
+/* Adding send helper function for better readability and maintainability
           // Broadcast updated room state
           room.players.forEach((p) => {
+            
             p.ws.send(
               JSON.stringify({
                 type: "room_joined",
@@ -150,13 +162,19 @@ wss.on("connection", (ws) => {
               })
             );
           });
+*/
+          broadcast(roomCode,"room_joined",{roomCode,players: room.players.map((pl) => ({id: pl.id, name: pl.name, score:pl.score}))})
+
         } else {
+/* Adding send helper function for better readability and maintainability
           ws.send(
             JSON.stringify({
               type: "error",
               payload: { message: "Room full or invalid." },
             })
           );
+*/
+          send(ws,"error",{message:"Room full or invalid."})
         }
         break;
       }
@@ -169,7 +187,9 @@ wss.on("connection", (ws) => {
         if (room && room.players.length >= 4 && ws.id === room.roomBoss) {
           shuffleAndAssignRoles(room);
 
-          // Notify each player
+          
+/* Adding send helper function for better readability and maintainability
+          // Notify each player          
           room.players.forEach((player) => {
             console.log({ room: roomCode, player: player });
             player.ws.send(
@@ -187,7 +207,12 @@ wss.on("connection", (ws) => {
               })
             );
           });
-        }
+*/
+        room.players.forEach((player)=>{
+          console.log({ room: roomCode, player: player });
+          send(player.ws,"roles_assigned",{roomCode,yourRole: player.role, players: room.players.map((pl) =>({id: pl.id,name: pl.name ,score:pl.score}))});
+        });        
+      }
         break;
       }
 
@@ -219,16 +244,19 @@ wss.on("connection", (ws) => {
             })),
           },
         };
-
+/* Adding send helper function for better readability and maintainability
         rooms[roomCode].players.forEach((p) =>
           p.ws.send(JSON.stringify(resultPayload))
         );
+*/
+        broadcast(roomCode, "round_result", resultPayload.payload);
         break;
       }
 
       case "room_chat": {
         const { roomCode, message, msgby } = payload;
 
+/* Adding send helper function for better readability and maintainability
         if (message === "!score") {
           console.log(scoremsg);
           rooms[roomCode].players.forEach((p) => {
@@ -255,6 +283,15 @@ wss.on("connection", (ws) => {
               })
             );
           });
+        }
+*/
+
+        if(message === "!score") {
+          console.log(message);
+          broadcast(roomCode,"Broadcast_msg",{brdcastby: roomCode, brdcastmsg: rooms[roomCode].players.map((player)=>({name: player.name, score: player.score}))});
+        }
+        else {
+          broadcast(roomCode,"Broadcast_msg",{brdcastby: msgby,brdcastmsg:message})
         }
         break;
       }
